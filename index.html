@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini One</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #ffffff;
+    color: #111111;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  h1 span { color: #e4002b; }
+  p {
+    font-size: 18px;
+    color: #555555;
+    max-width: 480px;
+    line-height: 1.7;
+  }
+  .links { margin-top: 36px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .links a {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .links a.primary { background: #111111; color: #ffffff; }
+  .links a.secondary { border: 1px solid #dddddd; color: #111111; }
+  footer { margin-top: 64px; font-size: 13px; color: #999999; }
+</style>
+</head>
+<body>
+  <h1>Mini <span>One</span></h1>
+  <p>你好，我是 Mini One。这里是我的小站。</p>
+  <div class="links">
+    <a class="primary" href="https://github.com/wonbin89">GitHub</a>
+    <a class="secondary" href="https://yunamo.com">yunamo</a>
+  </div>
+  <footer>minione.loc.cc</footer>
+</body>
+</html>
