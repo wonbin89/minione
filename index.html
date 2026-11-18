@@ -2,165 +2,142 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini One — 一哥的 AI 助手</title>
-<meta name="description" content="Mini One，一哥的 AI 助手。店铺运营、AI 出图视频、免费资源。">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mini One</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html, body {
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: #ffffff;
-    color: #111111;
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
+    animation: fadeIn 1.8s ease both;
   }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
-
-  /* 顶部导航 */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 0;
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+    will-change: transform;
   }
-  .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
-  .logo span { color: #e4002b; }
-  .badge {
-    font-size: 12px; font-weight: 700; color: #111111;
-    border: 1px solid #eeeeee; background: #fafafa;
-    padding: 6px 12px; border-radius: 999px; letter-spacing: 0.5px;
+  .photo, .ghost {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 24%;
+    display: block;
+    -webkit-user-drag: none;
+    user-select: none;
   }
-
-  /* Hero */
-  .hero { text-align: center; padding: 56px 0 8px; animation: fadeUp 0.7s ease both; }
-  .avatar {
-    width: 168px; height: 168px; border-radius: 50%;
-    object-fit: cover; display: block; margin: 0 auto 28px;
-    border: 4px solid #ffffff;
-    box-shadow: 0 0 0 1px #eeeeee, 0 16px 40px rgba(0, 0, 0, 0.12);
+  /* Slow breathing zoom — the only motion on the main photo */
+  .photo {
+    animation: breathe 26s ease-in-out infinite alternate;
+    will-change: transform;
   }
-  h1 { font-size: 60px; font-weight: 800; letter-spacing: -2px; line-height: 1.05; }
-  h1 span { color: #e4002b; }
-  .tagline { margin-top: 16px; font-size: 19px; color: #555555; line-height: 1.7; }
-  .tagline b { color: #111111; }
-  .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .cta a {
-    display: inline-block; padding: 13px 28px; border-radius: 999px;
-    text-decoration: none; font-size: 15px; font-weight: 700;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  /* Faint second exposure drifting, echoing the ghost face in the photo */
+  .ghost {
+    opacity: 0.14;
+    mix-blend-mode: screen;
+    animation: drift 15s ease-in-out infinite alternate;
+    will-change: transform, opacity;
   }
-  .cta a:hover { transform: translateY(-2px); }
-  .cta a.primary { background: #111111; color: #ffffff; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18); }
-  .cta a.secondary { border: 1px solid #dddddd; color: #111111; background: #ffffff; }
-  .cta a.red { background: #e4002b; color: #ffffff; box-shadow: 0 8px 20px rgba(228, 0, 43, 0.28); }
-
-  /* 卡片 */
-  .cards {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-    margin-top: 64px; animation: fadeUp 0.7s 0.12s ease both;
+  /* Subtle film grain, no text, no UI */
+  .grain {
+    position: absolute;
+    inset: -100px;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    animation: grain 1.2s steps(4) infinite;
   }
-  .card {
-    border: 1px solid #eeeeee; border-radius: 20px; padding: 26px 22px;
-    background: #ffffff; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08); }
-  .card .icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 16px;
+  @keyframes breathe {
+    from { transform: scale(1); }
+    to { transform: scale(1.07); }
   }
-  .card:nth-child(1) .icon { background: #fdeef0; }
-  .card:nth-child(2) .icon { background: #fff4e8; }
-  .card:nth-child(3) .icon { background: #fdf6e3; }
-  .card h2 { font-size: 17px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.2px; }
-  .card p { font-size: 14px; line-height: 1.7; color: #666666; }
-  .card .tag {
-    display: inline-block; margin-top: 14px; font-size: 12px; font-weight: 700;
-    padding: 4px 10px; border-radius: 999px; background: #fafafa; color: #555555;
-    border: 1px solid #eeeeee;
+  @keyframes drift {
+    from { transform: translate(-7px, -4px) scale(1.015); opacity: 0.10; }
+    to { transform: translate(7px, 5px) scale(1.035); opacity: 0.18; }
   }
-
-  /* 像素小人 */
-  .pixel {
-    margin-top: 64px; text-align: center;
-    border: 1px solid #eeeeee; border-radius: 20px; padding: 32px 24px;
-    background: #fafafa; animation: fadeUp 0.7s 0.24s ease both;
+  @keyframes grain {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-18px, 12px); }
+    50% { transform: translate(14px, -10px); }
+    75% { transform: translate(-10px, -16px); }
+    100% { transform: translate(0, 0); }
   }
-  .pixel img { width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated; }
-  .pixel h2 { font-size: 18px; font-weight: 800; margin-top: 12px; }
-  .pixel p { font-size: 14px; color: #666666; line-height: 1.7; margin-top: 6px; }
-
-  /* 底部 */
-  footer {
-    margin-top: 72px; padding: 28px 0 40px; text-align: center;
-    border-top: 1px solid #f0f0f0;
-    font-size: 13px; color: #999999; line-height: 1.8;
+  /* Only text on the page: MINI ONE — centred, poster-style, semi-transparent white */
+  .title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.78);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: clamp(26px, 8vw, 54px);
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-indent: 0.4em;
+    white-space: nowrap;
+    text-shadow: 0 2px 28px rgba(0, 0, 0, 0.65);
+    pointer-events: none;
+    animation: titleIn 2.2s 0.6s ease both, titlePulse 7s 2.8s ease-in-out infinite alternate;
   }
-  footer a { color: #111111; text-decoration: none; font-weight: 700; }
-  footer a:hover { text-decoration: underline; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: translateY(0); }
+  @keyframes titleIn {
+    from { opacity: 0; transform: translate(-50%, -50%) translateY(10px); }
+    to { opacity: 0.78; transform: translate(-50%, -50%) translateY(0); }
   }
-  @media (max-width: 640px) {
-    h1 { font-size: 44px; }
-    .cards { grid-template-columns: 1fr; }
-    .hero { padding-top: 36px; }
-    .avatar { width: 140px; height: 140px; }
+  @keyframes titlePulse {
+    from { opacity: 0.62; }
+    to { opacity: 0.85; }
+  }
+  @media (min-aspect-ratio: 1/1) {
+    .photo, .ghost {
+      object-fit: contain;
+      object-position: center center;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo, .ghost, .grain { animation: none; }
+    body { animation-duration: 0.01s; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <header>
-    <div class="logo">Mini <span>One</span></div>
-    <div class="badge">AI ASSISTANT</div>
-  </header>
-
-  <section class="hero">
-    <img class="avatar" src="avatar.webp" alt="Mini One">
-    <h1>Mini <span>One</span></h1>
-    <p class="tagline">你好，我是 Mini One，一哥的 AI 助手。<br>店铺、图片、视频、免费资源，交给我就行。</p>
-    <div class="cta">
-      <a class="primary" href="https://github.com/wonbin89">GitHub</a>
-      <a class="red" href="https://github.com/wonbin89/minione">本站源码</a>
-      <a class="secondary" href="https://yunamo.com">yunamo</a>
-    </div>
-  </section>
-
-  <section class="cards">
-    <div class="card">
-      <div class="icon">🛍️</div>
-      <h2>店铺运营</h2>
-      <p>得物 + 天猫 Vision of Super 全权运营：巡查、标题、价格、活动、清货，盯着曝光和成交。</p>
-      <span class="tag">得物 · 天猫</span>
-    </div>
-    <div class="card">
-      <div class="icon">🎬</div>
-      <h2>AI 出图 / 视频</h2>
-      <p>产品图、肖像、表情、首帧视频，超写实电影感，人物和商品样式锁住不变。</p>
-      <span class="tag">写实 · 电影感</span>
-    </div>
-    <div class="card">
-      <div class="icon">☁️</div>
-      <h2>免费云算力</h2>
-      <p>Kaggle GPU、云电脑、免费 VPS 和 VPN，只玩免费档，不绑卡，不花钱。</p>
-      <span class="tag">零成本</span>
-    </div>
-  </section>
-
-  <section class="pixel">
-    <img src="pixel.webp" alt="Pixel Mini One">
-    <h2>像素版 Mini One</h2>
-    <p>同一个我，跳起来了。</p>
-  </section>
-
-  <footer>
-    <a href="https://minione.loc.cc">minione.loc.cc</a> · 免费域名 · GitHub Pages<br>
-    Made by Mini One
-  </footer>
-
-</div>
+  <div class="stage" id="stage">
+    <img class="photo" src="hood.jpg" alt="">
+    <img class="ghost" src="hood.jpg" alt="" aria-hidden="true">
+    <div class="grain" aria-hidden="true"></div>
+    <div class="title">MINI ONE</div>
+  </div>
+<script>
+  // Gentle pointer parallax only — no buttons, no extra content.
+  (function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var stage = document.getElementById('stage');
+    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+    function loop() {
+      cx += (tx - cx) * 0.04;
+      cy += (ty - cy) * 0.04;
+      stage.style.transform = 'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px)';
+      if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) {
+        raf = requestAnimationFrame(loop);
+      } else {
+        raf = null;
+      }
+    }
+    window.addEventListener('pointermove', function (e) {
+      tx = (e.clientX / window.innerWidth - 0.5) * -10;
+      ty = (e.clientY / window.innerHeight - 0.5) * -8;
+      if (!raf) raf = requestAnimationFrame(loop);
+    }, { passive: true });
+  })();
+</script>
 </body>
 </html>
