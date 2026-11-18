@@ -19,9 +19,9 @@
     inset: 0;
     overflow: hidden;
     background: #000;
-    will-change: transform;
   }
-  .photo, .ghost {
+  /* The person never moves — the photo is completely still */
+  .photo {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -32,17 +32,13 @@
     -webkit-user-drag: none;
     user-select: none;
   }
-  /* Slow breathing zoom — the only motion on the main photo */
-  .photo {
-    animation: breathe 26s ease-in-out infinite alternate;
-    will-change: transform;
-  }
-  /* Faint second exposure drifting, echoing the ghost face in the photo */
-  .ghost {
-    opacity: 0.14;
-    mix-blend-mode: screen;
-    animation: drift 15s ease-in-out infinite alternate;
-    will-change: transform, opacity;
+  /* Drifting particles float over the still photo */
+  #dust {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
   }
   /* Subtle film grain, no text, no UI */
   .grain {
@@ -57,14 +53,6 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  @keyframes breathe {
-    from { transform: scale(1); }
-    to { transform: scale(1.07); }
-  }
-  @keyframes drift {
-    from { transform: translate(-7px, -4px) scale(1.015); opacity: 0.10; }
-    to { transform: translate(7px, 5px) scale(1.035); opacity: 0.18; }
-  }
   @keyframes grain {
     0% { transform: translate(0, 0); }
     25% { transform: translate(-18px, 12px); }
@@ -72,7 +60,7 @@
     75% { transform: translate(-10px, -16px); }
     100% { transform: translate(0, 0); }
   }
-  /* Only text on the page: MINI ONE — centred, poster-style, semi-transparent white */
+  /* Only text on the page: MINI ONE — centred, bold, poster-style, semi-transparent white */
   .title {
     position: absolute;
     left: 50%;
@@ -97,14 +85,15 @@
     from { opacity: 0.62; }
     to { opacity: 0.85; }
   }
+  /* Wide screens: show the whole photo instead of cropping it */
   @media (min-aspect-ratio: 1/1) {
-    .photo, .ghost {
+    .photo {
       object-fit: contain;
       object-position: center center;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .photo, .ghost, .grain { animation: none; }
+    .grain { animation: none; }
     body { animation-duration: 0.01s; }
   }
 </style>
@@ -112,31 +101,69 @@
 <body>
   <div class="stage" id="stage">
     <img class="photo" src="hood.jpg" alt="">
-    <img class="ghost" src="hood.jpg" alt="" aria-hidden="true">
+    <canvas id="dust" aria-hidden="true"></canvas>
     <div class="grain" aria-hidden="true"></div>
     <div class="title">MINI ONE</div>
   </div>
 <script>
-  // Gentle pointer parallax only — no buttons, no extra content.
+  // Particles drift and disperse over the still photo — the person never moves.
   (function () {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var stage = document.getElementById('stage');
-    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
-    function loop() {
-      cx += (tx - cx) * 0.04;
-      cy += (ty - cy) * 0.04;
-      stage.style.transform = 'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px)';
-      if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) {
-        raf = requestAnimationFrame(loop);
-      } else {
-        raf = null;
+    var canvas = document.getElementById('dust');
+    var ctx = canvas.getContext('2d');
+    var W, H, parts = [];
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function resize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function make(seed) {
+      var big = Math.random() < 0.14;
+      return {
+        x: Math.random() * W,
+        y: seed ? Math.random() * H : H + 10 + Math.random() * 40,
+        r: big ? 2.5 + Math.random() * 3.5 : 0.7 + Math.random() * 1.8,
+        vy: -(0.15 + Math.random() * 0.45),
+        sway: 0.2 + Math.random() * 0.6,
+        phase: Math.random() * Math.PI * 2,
+        base: big ? 0.10 + Math.random() * 0.12 : 0.25 + Math.random() * 0.45,
+        tw: 0.4 + Math.random() * 1.2
+      };
+    }
+    function init() {
+      resize();
+      var n = Math.round(Math.min(110, Math.max(55, (W * H) / 16000)));
+      parts = [];
+      for (var i = 0; i < n; i++) parts.push(make(true));
+      if (reduced) draw(0);
+    }
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        var a = p.base * (0.55 + 0.45 * Math.sin(t / 1000 * p.tw + p.phase));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.fill();
       }
     }
-    window.addEventListener('pointermove', function (e) {
-      tx = (e.clientX / window.innerWidth - 0.5) * -10;
-      ty = (e.clientY / window.innerHeight - 0.5) * -8;
-      if (!raf) raf = requestAnimationFrame(loop);
-    }, { passive: true });
+    function tick(t) {
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        p.y += p.vy;
+        p.x += Math.sin(t / 1600 + p.phase) * p.sway * 0.35;
+        if (p.y < -12 || p.x < -20 || p.x > W + 20) parts[i] = make(false);
+      }
+      draw(t);
+      requestAnimationFrame(tick);
+    }
+    init();
+    window.addEventListener('resize', init);
+    if (!reduced) requestAnimationFrame(tick);
   })();
 </script>
 </body>
