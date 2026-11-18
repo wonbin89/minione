@@ -19,9 +19,10 @@
     inset: 0;
     overflow: hidden;
     background: #000;
+    touch-action: none;
   }
-  /* Looping video: the person never moves, particles drift up inside the video */
-  .film {
+  /* The person never moves — the photo is completely still */
+  .photo {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -29,12 +30,24 @@
     object-fit: cover;
     object-position: center 24%;
     display: block;
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+  /* Interactive particles: big, glowing, always visible */
+  #dust {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
   }
   .grain {
     position: absolute;
     inset: -100px;
     pointer-events: none;
     opacity: 0.05;
+    z-index: 3;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
     animation: grain 1.2s steps(4) infinite;
   }
@@ -64,6 +77,7 @@
     white-space: nowrap;
     text-shadow: 0 2px 28px rgba(0, 0, 0, 0.65);
     pointer-events: none;
+    z-index: 4;
     animation: titleIn 2.2s 0.6s ease both, titlePulse 7s 2.8s ease-in-out infinite alternate;
   }
   @keyframes titleIn {
@@ -74,9 +88,9 @@
     from { opacity: 0.62; }
     to { opacity: 0.85; }
   }
-  /* Wide screens: show the whole video instead of cropping it */
+  /* Wide screens: show the whole photo instead of cropping it */
   @media (min-aspect-ratio: 1/1) {
-    .film {
+    .photo {
       object-fit: contain;
       object-position: center center;
     }
@@ -89,12 +103,110 @@
 </head>
 <body>
   <div class="stage" id="stage">
-    <video class="film" autoplay muted loop playsinline preload="auto" poster="hood.jpg">
-      <source src="hood.mp4" type="video/mp4">
-      <img src="hood.jpg" alt="">
-    </video>
+    <img class="photo" src="hood.jpg" alt="">
+    <canvas id="dust" aria-hidden="true"></canvas>
     <div class="grain" aria-hidden="true"></div>
     <div class="title">MINI ONE</div>
   </div>
+<script>
+  // Core play: particles drift up on their own; the mouse pushes them
+  // away, then a spring pulls them back to their drift path.
+  // The photo itself never moves.
+  (function () {
+    var canvas = document.getElementById('dust');
+    var ctx = canvas.getContext('2d');
+    var W = 0, H = 0, parts = [];
+    var mouse = { x: -9999, y: -9999, active: false };
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function resize() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function make(seed) {
+      return {
+        x: Math.random() * W,
+        y: seed ? Math.random() * H : H + 12 + Math.random() * 30,
+        r: 2.6 + Math.random() * 3.6,          // 2.6–6.2px, big enough to see
+        vy: 0.35 + Math.random() * 0.65,       // px/frame upward
+        sway: 0.25 + Math.random() * 0.6,
+        phase: Math.random() * Math.PI * 2,
+        op: 0.65 + Math.random() * 0.35,       // bright, not faint
+        ox: 0, oy: 0, vx: 0, vy2: 0            // repulsion offset + spring velocity
+      };
+    }
+    function init() {
+      resize();
+      var n = Math.round(Math.min(110, Math.max(70, (W * H) / 14000)));
+      parts = [];
+      for (var i = 0; i < n; i++) parts.push(make(true));
+      draw(0);
+    }
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        var px = p.x + p.ox + Math.sin(t / 1600 + p.phase) * p.sway * 8;
+        var py = p.y + p.oy;
+        var tw = 0.75 + 0.25 * Math.sin(t / 900 + p.phase);
+        var a = p.op * tw;
+        // glow halo, then a solid core — visible on both black and white
+        ctx.beginPath();
+        ctx.arc(px, py, p.r * 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + (a * 0.18).toFixed(3) + ')';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.fill();
+      }
+    }
+    function tick(t) {
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        p.y -= p.vy;
+        if (p.y < -14) { parts[i] = make(false); continue; }
+        if (mouse.active) {
+          var px = p.x + p.ox;
+          var py = p.y + p.oy;
+          var dx = px - mouse.x, dy = py - mouse.y;
+          var d2 = dx * dx + dy * dy;
+          var R = 150;
+          if (d2 < R * R && d2 > 0.01) {
+            var d = Math.sqrt(d2);
+            var f = (1 - d / R) * 2.2;   // push away from the cursor
+            p.vx += (dx / d) * f;
+            p.vy2 += (dy / d) * f;
+          }
+        }
+        // spring back to the drift path, with damping — scatter, then gather
+        p.vx += -p.ox * 0.012;
+        p.vy2 += -p.oy * 0.012;
+        p.vx *= 0.92;
+        p.vy2 *= 0.92;
+        p.ox += p.vx;
+        p.oy += p.vy2;
+      }
+      draw(t);
+      if (!reduced) requestAnimationFrame(tick);
+    }
+    function setMouse(e) {
+      var r = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+      mouse.active = true;
+    }
+    window.addEventListener('pointermove', setMouse, { passive: true });
+    window.addEventListener('pointerdown', setMouse, { passive: true });
+    window.addEventListener('pointerleave', function () { mouse.active = false; });
+    window.addEventListener('resize', init);
+    init();
+    if (!reduced) requestAnimationFrame(tick);
+  })();
+</script>
 </body>
 </html>
