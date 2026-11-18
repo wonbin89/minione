@@ -20,8 +20,8 @@
     overflow: hidden;
     background: #000;
   }
-  /* The person never moves — the photo is completely still */
-  .photo {
+  /* Looping video: the person never moves, particles drift up inside the video */
+  .film {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -29,37 +29,7 @@
     object-fit: cover;
     object-position: center 24%;
     display: block;
-    -webkit-user-drag: none;
-    user-select: none;
   }
-  /* Big visible particles drifting up over the still photo */
-  .particles {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .dot {
-    position: absolute;
-    bottom: -14px;
-    left: var(--x);
-    width: var(--s);
-    height: var(--s);
-    border-radius: 50%;
-    background: #fff;
-    opacity: 0;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.85), 0 0 22px rgba(255, 255, 255, 0.35);
-    animation: floatUp var(--d) linear infinite;
-    animation-delay: var(--dl);
-  }
-  @keyframes floatUp {
-    0% { transform: translate(0, 0); opacity: 0; }
-    12% { opacity: var(--o); }
-    50% { transform: translate(-16px, -52vh); opacity: var(--o); }
-    88% { opacity: var(--o); }
-    100% { transform: translate(18px, -105vh); opacity: 0; }
-  }
-  /* Subtle film grain, no text, no UI */
   .grain {
     position: absolute;
     inset: -100px;
@@ -104,49 +74,25 @@
     from { opacity: 0.62; }
     to { opacity: 0.85; }
   }
-  /* Wide screens: show the whole photo instead of cropping it */
+  /* Wide screens: show the whole video instead of cropping it */
   @media (min-aspect-ratio: 1/1) {
-    .photo {
+    .film {
       object-fit: contain;
       object-position: center center;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .grain, .dot { animation: none; }
-    .dot { opacity: var(--o); bottom: 40%; }
+    .grain { animation: none; }
     body { animation-duration: 0.01s; }
   }
 </style>
 </head>
 <body>
   <div class="stage" id="stage">
-    <img class="photo" src="hood.jpg" alt="">
-    <div class="particles" aria-hidden="true">
-      <i class="dot" style="--x:6%; --s:5px; --d:11s; --dl:-2s; --o:.85"></i>
-      <i class="dot" style="--x:12%; --s:3px; --d:14s; --dl:-7s; --o:.7"></i>
-      <i class="dot" style="--x:18%; --s:7px; --d:12s; --dl:-5s; --o:.8"></i>
-      <i class="dot" style="--x:24%; --s:4px; --d:16s; --dl:-11s; --o:.65"></i>
-      <i class="dot" style="--x:31%; --s:6px; --d:10s; --dl:-4s; --o:.9"></i>
-      <i class="dot" style="--x:37%; --s:3px; --d:15s; --dl:-9s; --o:.7"></i>
-      <i class="dot" style="--x:43%; --s:8px; --d:13s; --dl:-1s; --o:.75"></i>
-      <i class="dot" style="--x:49%; --s:4px; --d:11s; --dl:-8s; --o:.85"></i>
-      <i class="dot" style="--x:55%; --s:6px; --d:14s; --dl:-3s; --o:.7"></i>
-      <i class="dot" style="--x:61%; --s:3px; --d:12s; --dl:-12s; --o:.8"></i>
-      <i class="dot" style="--x:67%; --s:7px; --d:10s; --dl:-6s; --o:.9"></i>
-      <i class="dot" style="--x:73%; --s:4px; --d:16s; --dl:-2s; --o:.65"></i>
-      <i class="dot" style="--x:79%; --s:5px; --d:13s; --dl:-10s; --o:.85"></i>
-      <i class="dot" style="--x:85%; --s:3px; --d:11s; --dl:-5s; --o:.7"></i>
-      <i class="dot" style="--x:91%; --s:6px; --d:15s; --dl:-8s; --o:.8"></i>
-      <i class="dot" style="--x:96%; --s:4px; --d:12s; --dl:-4s; --o:.75"></i>
-      <i class="dot" style="--x:9%; --s:8px; --d:17s; --dl:-13s; --o:.6"></i>
-      <i class="dot" style="--x:28%; --s:9px; --d:18s; --dl:-15s; --o:.55"></i>
-      <i class="dot" style="--x:52%; --s:9px; --d:17s; --dl:-14s; --o:.6"></i>
-      <i class="dot" style="--x:76%; --s:8px; --d:18s; --dl:-16s; --o:.55"></i>
-      <i class="dot" style="--x:88%; --s:9px; --d:19s; --dl:-17s; --o:.5"></i>
-      <i class="dot" style="--x:40%; --s:5px; --d:9s; --dl:-1s; --o:.9"></i>
-      <i class="dot" style="--x:58%; --s:5px; --d:9s; --dl:-6s; --o:.9"></i>
-      <i class="dot" style="--x:70%; --s:4px; --d:10s; --dl:-9s; --o:.85"></i>
-    </div>
+    <video class="film" autoplay muted loop playsinline preload="auto" poster="hood.jpg">
+      <source src="hood.mp4" type="video/mp4">
+      <img src="hood.jpg" alt="">
+    </video>
     <div class="grain" aria-hidden="true"></div>
     <div class="title">MINI ONE</div>
   </div>
